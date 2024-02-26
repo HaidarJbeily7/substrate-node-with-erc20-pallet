@@ -1,9 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://docs.substrate.io/reference/frame-pallets/>
 pub use pallet::*;
+use scale_info::prelude::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -25,13 +23,18 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type representing the weight of this pallet
 		type WeightInfo: WeightInfo;
+		#[pallet::constant]
+		type TokenName: Get<Vec<u8>>;
+		#[pallet::constant]
+		type TokenSymbol: Get<Vec<u8>>;
+		#[pallet::constant]
+		type TokenDecimals: Get<u8>;
 	}
 
 	// The pallet's runtime storage items.
