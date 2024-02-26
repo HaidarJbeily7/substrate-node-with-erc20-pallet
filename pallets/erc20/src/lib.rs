@@ -42,7 +42,7 @@ pub mod pallet {
 	}
 	#[pallet::storage]
 	#[pallet::getter(fn total_supply)]
-	pub type TotalSupply<T: Config> =
+	type TotalSupply<T: Config> =
 		StorageValue<Value = u64, QueryKind = ValueQuery, OnEmpty = TotalSupplyDefault<T>>;
 
 	#[pallet::storage]
