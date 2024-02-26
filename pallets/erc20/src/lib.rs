@@ -36,10 +36,14 @@ pub mod pallet {
 		#[pallet::constant]
 		type TokenDecimals: Get<u8>;
 	}
-
+	#[pallet::type_value]
+	pub(super) fn TotalSupplyDefault<T: Config>() -> u64 {
+		0
+	}
 	#[pallet::storage]
 	#[pallet::getter(fn total_supply)]
-	pub type TotalSupply<T> = StorageValue<_, u64>;
+	pub type TotalSupply<T: Config> =
+		StorageValue<Value = u64, QueryKind = ValueQuery, OnEmpty = TotalSupplyDefault<T>>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn balances)]
@@ -76,7 +80,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::transfer())]
 		pub fn transfer(origin: OriginFor<T>, to: T::AccountId, amount: u64) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			let sender_balance = Balances::<T>::get(&sender);
@@ -89,7 +93,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::transfer_from())]
 		pub fn transfer_from(
 			origin: OriginFor<T>,
 			from: T::AccountId,
@@ -110,7 +114,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::approve())]
 		pub fn approve(origin: OriginFor<T>, spender: T::AccountId, amount: u64) -> DispatchResult {
 			let owner = ensure_signed(origin)?;
 			<Allowances<T>>::set(&owner, &spender, amount);
@@ -119,10 +123,10 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::mint())]
 		pub fn mint(origin: OriginFor<T>, amount: u64) -> DispatchResult {
 			let owner = ensure_signed(origin)?;
-			let total_supply = <TotalSupply<T>>::get().unwrap();
+			let total_supply = <TotalSupply<T>>::get();
 			<TotalSupply<T>>::put(total_supply + amount);
 			<Balances<T>>::set(&owner, <Balances<T>>::get(&owner) + amount);
 			Self::deposit_event(Event::Mint { account: owner.clone(), amount });
@@ -130,12 +134,12 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::burn())]
 		pub fn burn(origin: OriginFor<T>, amount: u64) -> DispatchResult {
 			let owner = ensure_signed(origin)?;
 			let owner_balance = <Balances<T>>::get(&owner);
 			ensure!(owner_balance >= amount, Error::<T>::ERC20InsufficientBalance);
-			let total_supply = <TotalSupply<T>>::get().unwrap();
+			let total_supply = <TotalSupply<T>>::get();
 			<TotalSupply<T>>::put(total_supply - amount);
 			<Balances<T>>::set(&owner, owner_balance - amount);
 			Self::deposit_event(Event::Burn { account: owner.clone(), amount });

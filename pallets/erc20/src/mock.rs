@@ -1,7 +1,6 @@
 use crate as pallet_erc20;
 pub use frame_support::parameter_types;
 use frame_support::traits::{ConstU16, ConstU64};
-use scale_info::prelude::string::String;
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
