@@ -117,9 +117,29 @@ pub mod pallet {
 			Self::deposit_event(Event::Approval { owner, spender, amount });
 			Ok(())
 		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::do_something())]
+		pub fn mint(origin: OriginFor<T>, amount: u64) -> DispatchResult {
+			let owner = ensure_signed(origin)?;
+			let total_supply = <TotalSupply<T>>::get().unwrap();
+			<TotalSupply<T>>::put(total_supply + amount);
+			<Balances<T>>::set(&owner, <Balances<T>>::get(&owner) + amount);
+			Self::deposit_event(Event::Mint { account: owner.clone(), amount });
+			Ok(())
+		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::do_something())]
+		pub fn burn(origin: OriginFor<T>, amount: u64) -> DispatchResult {
+			let owner = ensure_signed(origin)?;
+			let owner_balance = <Balances<T>>::get(&owner);
+			ensure!(owner_balance >= amount, Error::<T>::ERC20InsufficientBalance);
+			let total_supply = <TotalSupply<T>>::get().unwrap();
+			<TotalSupply<T>>::put(total_supply - amount);
+			<Balances<T>>::set(&owner, owner_balance - amount);
+			Self::deposit_event(Event::Burn { account: owner.clone(), amount });
+			Ok(())
+		}
 	}
-
-	fn _burn() {}
-
-	fn _mint() {}
 }
