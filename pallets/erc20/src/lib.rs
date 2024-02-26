@@ -69,11 +69,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		ERC20InvalidSender,
-		ERC20InvalidReceiver,
-		ERC20InvalidApprover,
-		ERC20InvalidSpender,
 		ERC20InsufficientAllowance,
+		ERC20InsufficientBalance,
 	}
 
 	#[pallet::call]
@@ -81,44 +78,48 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::do_something())]
 		pub fn transfer(origin: OriginFor<T>, to: T::AccountId, amount: u64) -> DispatchResult {
-			let owner = ensure_signed(origin)?;
-
+			let sender = ensure_signed(origin)?;
+			let sender_balance = Balances::<T>::get(&sender);
+			let receiver_balance = Balances::<T>::get(&to);
+			ensure!(sender_balance >= amount, Error::<T>::ERC20InsufficientBalance);
+			<Balances<T>>::set(&sender, sender_balance - amount);
+			<Balances<T>>::set(&to, receiver_balance + amount);
+			Self::deposit_event(Event::Transfer { from: sender.clone(), to, amount });
 			Ok(())
 		}
 
-		// #[pallet::call_index(1)]
-		// #[pallet::weight(T::WeightInfo::do_something())]
-		// pub fn transferFrom(
-		// 	origin: OriginFor<T>,
-		// 	from: T::AccountId,
-		// 	to: T::AccountId,
-		// 	amount: u64,
-		// ) -> DispatchResult {
-		// 	let owner = ensure_signed(origin)?;
-		// 	ensure!()
-		// 	Ok(())
-		// }
+		#[pallet::call_index(1)]
+		#[pallet::weight(T::WeightInfo::do_something())]
+		pub fn transfer_from(
+			origin: OriginFor<T>,
+			from: T::AccountId,
+			to: T::AccountId,
+			amount: u64,
+		) -> DispatchResult {
+			let spender = ensure_signed(origin)?;
+			let sender_balance = Balances::<T>::get(&from);
+			let receiver_balance = Balances::<T>::get(&to);
+			let allownce = <Allowances<T>>::get(&from, &spender);
+			ensure!(allownce >= amount, Error::<T>::ERC20InsufficientAllowance);
+			ensure!(sender_balance >= amount, Error::<T>::ERC20InsufficientBalance);
+			<Allowances<T>>::set(&from, &spender, allownce - amount);
+			<Balances<T>>::set(&from, sender_balance - amount);
+			<Balances<T>>::set(&to, receiver_balance + amount);
+			Self::deposit_event(Event::Transfer { from, to, amount });
+			Ok(())
+		}
 
-		// #[pallet::call_index(2)]
-		// #[pallet::weight(T::WeightInfo::do_something())]
-		// pub fn approve(origin: OriginFor<T>, to: T::AccountId, amount: u64) -> DispatchResult {
-		// 	let owner = ensure_signed(origin)?;
-
-		// 	Ok(())
-		// }
+		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::do_something())]
+		pub fn approve(origin: OriginFor<T>, spender: T::AccountId, amount: u64) -> DispatchResult {
+			let owner = ensure_signed(origin)?;
+			<Allowances<T>>::set(&owner, &spender, amount);
+			Self::deposit_event(Event::Approval { owner, spender, amount });
+			Ok(())
+		}
 	}
 
-	// fn _transfer<T: Config>(from: T::AccountId, to: T::AccountId, value: u64) -> DispatchResult {
-	// 	if from == T::Root::root() {
-	// 		return Ok(())
-	// 	}
-	// 	Err(Error::ERC20InvalidSender.into());
-	// }
 	fn _burn() {}
 
 	fn _mint() {}
-
-	fn _approve() {}
-
-	fn _spendAllownace() {}
 }
